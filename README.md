@@ -56,6 +56,8 @@ dotnet run --project src/Web/Web.csproj
 
 Expected health endpoint: `GET /health`.
 
+> If no `ConnectionStrings:AppDb` value is provided, the web app now automatically uses an in-memory database so it can run out-of-the-box for local UI testing.
+
 ### Run functions app
 
 ```bash

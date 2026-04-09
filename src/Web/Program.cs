@@ -1,3 +1,5 @@
+using Infrastructure.Persistence;
+using Microsoft.EntityFrameworkCore;
 using MudBlazor.Services;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -11,6 +13,28 @@ builder.Services.AddHttpClient("ApiClient", client =>
     client.BaseAddress = new Uri(builder.Configuration["ApiBaseUrl"] ?? "http://localhost:5000");
 });
 
+var configuredConnectionString = builder.Configuration.GetConnectionString("AppDb");
+
+if (!string.IsNullOrWhiteSpace(configuredConnectionString))
+{
+    builder.Services.AddDbContext<AppDbContext>(options =>
+    {
+        options.UseSqlServer(
+            configuredConnectionString,
+            sqlServerOptions =>
+            {
+                sqlServerOptions.MigrationsAssembly(typeof(AppDbContext).Assembly.FullName);
+                sqlServerOptions.EnableRetryOnFailure(5, TimeSpan.FromSeconds(10), null);
+            });
+    });
+}
+else
+{
+    builder.Services.AddDbContext<AppDbContext>(options => options.UseInMemoryDatabase("WorkInstructions"));
+}
+
+builder.Services.AddHealthChecks();
+
 var app = builder.Build();
 
 if (!app.Environment.IsDevelopment())
@@ -20,44 +44,11 @@ if (!app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+app.UseStaticFiles();
 app.UseAntiforgery();
 
-app.MapStaticAssets();
+app.MapHealthChecks("/health");
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
-using Infrastructure.Persistence;
-using Microsoft.EntityFrameworkCore;
-
-var builder = WebApplication.CreateBuilder(args);
-
-var configuredConnectionString = builder.Configuration.GetConnectionString("AppDb")
-    ?? throw new InvalidOperationException("Connection string 'AppDb' was not found.");
-
-builder.Services.AddDbContext<AppDbContext>(options =>
-{
-    options.UseSqlServer(
-        configuredConnectionString,
-        sqlServerOptions =>
-        {
-            sqlServerOptions.MigrationsAssembly(typeof(AppDbContext).Assembly.FullName);
-            sqlServerOptions.EnableRetryOnFailure(5, TimeSpan.FromSeconds(10), null);
-        });
-});
-
-builder.Services.AddHealthChecks();
-
-var app = builder.Build();
-
-app.MapHealthChecks("/health");
-var builder = WebApplication.CreateBuilder(args);
-
-builder.Services.AddRazorPages();
-builder.Services.AddServerSideBlazor();
-
-var app = builder.Build();
-
-app.MapGet("/health", () => Results.Ok(new { Status = "Healthy" }));
-app.MapBlazorHub();
-app.MapFallbackToPage("/_Host");
 
 app.Run();
