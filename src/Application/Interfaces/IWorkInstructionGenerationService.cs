@@ -1,10 +1,13 @@
 using System.Threading;
 using System.Threading.Tasks;
-using Application.DTOs;
+using Application.Models;
 
 namespace Application.Interfaces;
 
 public interface IWorkInstructionGenerationService
 {
-    Task<string> GenerateDraftAsync(StartGenerationRequest request, CancellationToken cancellationToken = default);
+    Task<string> GenerateDraftAsync(
+        NormalizedWorkInstructionInput normalizedInput,
+        string promptTemplateVersion,
+        CancellationToken cancellationToken = default);
 }

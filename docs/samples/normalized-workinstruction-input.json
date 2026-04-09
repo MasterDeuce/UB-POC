@@ -1,0 +1,34 @@
+{
+  "projectId": "PRJ-2048",
+  "projectName": "North Wing Build-Out",
+  "requestedBy": "Alex Johnson",
+  "workScopeSummary": "Install framing, rough-in electrical, and drywall for level 2 tenant space.",
+  "proposalSummary": "Proposal includes labor and standard material allowances; final fixture selections pending owner approval.",
+  "estimateSummary": "Estimate assumes 10 working days with a 4-person crew and standard site access.",
+  "proposedDailyPlan": [
+    {
+      "day": 1,
+      "activities": "Site setup, layout verification, and material staging.",
+      "notes": "Pending delivery confirmation for framing materials."
+    },
+    {
+      "day": 2,
+      "activities": "Begin wall framing in zones A and B.",
+      "notes": "Coordinate with electrical subcontractor for rough-in locations."
+    },
+    {
+      "day": 3,
+      "activities": "Complete framing and start electrical rough-in.",
+      "notes": null
+    }
+  ],
+  "confirmedFacts": [
+    "Crew size: 4",
+    "Estimated duration: 10 working days",
+    "Scope includes framing, electrical rough-in, drywall"
+  ],
+  "openItems": [
+    "Owner fixture schedule is not finalized.",
+    "After-hours access approval not yet confirmed."
+  ]
+}
