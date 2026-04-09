@@ -8,6 +8,7 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
     public DbSet<Project> Projects => Set<Project>();
     public DbSet<WorkInstructionJob> WorkInstructionJobs => Set<WorkInstructionJob>();
     public DbSet<WorkInstructionExecution> WorkInstructionExecutions => Set<WorkInstructionExecution>();
+    public DbSet<WorkflowStepState> WorkflowStepStates => Set<WorkflowStepState>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
