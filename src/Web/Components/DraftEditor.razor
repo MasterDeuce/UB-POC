@@ -1,0 +1,55 @@
+<MudPaper Class="pa-4" Elevation="1">
+    <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+        <MudText Typo="Typo.h6">Draft Editor (Phase 4)</MudText>
+        <MudChip T="string" Color="Color.Warning" Variant="Variant.Outlined">Hook</MudChip>
+    </MudStack>
+
+    <MudText Typo="Typo.body2" Class="mt-2">
+        This component is wired as a placeholder for Phase 4 drafting/review actions.
+    </MudText>
+
+    <MudTextField @bind-Value="DraftText" Label="Draft Content" Lines="12" Variant="Variant.Outlined" Margin="Margin.Dense" Class="mt-3" />
+
+    <MudStack Row="true" Class="mt-3" Spacing="2">
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" Disabled="_saving" OnClick="SaveDraftAsync">Save Draft</MudButton>
+        <MudButton Variant="Variant.Outlined" Disabled="_saving" OnClick="LoadDraftAsync">Reload</MudButton>
+    </MudStack>
+</MudPaper>
+
+@code {
+    [Inject] public IHttpClientFactory HttpClientFactory { get; set; } = default!;
+    [Parameter, EditorRequired] public string ProjectNumber { get; set; } = string.Empty;
+
+    private bool _saving;
+    private string DraftText { get; set; } = string.Empty;
+
+    private async Task LoadDraftAsync()
+    {
+        if (string.IsNullOrWhiteSpace(ProjectNumber))
+        {
+            return;
+        }
+
+        var client = HttpClientFactory.CreateClient("ApiClient");
+        DraftText = await client.GetStringAsync($"/api/projects/{ProjectNumber}/draft");
+    }
+
+    private async Task SaveDraftAsync()
+    {
+        if (string.IsNullOrWhiteSpace(ProjectNumber))
+        {
+            return;
+        }
+
+        _saving = true;
+        try
+        {
+            var client = HttpClientFactory.CreateClient("ApiClient");
+            _ = await client.PostAsJsonAsync($"/api/projects/{ProjectNumber}/draft", new { content = DraftText });
+        }
+        finally
+        {
+            _saving = false;
+        }
+    }
+}

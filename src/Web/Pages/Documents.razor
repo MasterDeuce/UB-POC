@@ -1,0 +1,94 @@
+@page "/documents"
+
+<PageTitle>Documents</PageTitle>
+
+<MudGrid Spacing="3">
+    <MudItem xs="12" md="4">
+        <MudPaper Class="pa-4" Elevation="1">
+            <MudText Typo="Typo.h6" Class="mb-2">Lookup Documents</MudText>
+            <MudForm @ref="_form" Model="_query">
+                <MudTextField @bind-Value="_query.ProjectNumber" Label="Project Number" For="@(() => _query.ProjectNumber)"
+                              Required="true" RequiredError="Project number is required" Variant="Variant.Outlined" />
+                <MudButton Class="mt-3" Variant="Variant.Filled" Color="Color.Primary" Disabled="_loading" OnClick="LoadDocumentsAsync">Load</MudButton>
+            </MudForm>
+        </MudPaper>
+    </MudItem>
+
+    <MudItem xs="12" md="8">
+        <MudPaper Class="pa-4" Elevation="1">
+            <MudText Typo="Typo.h6" Class="mb-2">Document Details</MudText>
+
+            @if (_loading)
+            {
+                <MudProgressCircular Indeterminate="true" />
+            }
+            else if (_documents.Count == 0)
+            {
+                <MudText Typo="Typo.body2">No documents loaded.</MudText>
+            }
+            else
+            {
+                <MudTable Items="_documents" Dense="true" Hover="true" Breakpoint="Breakpoint.Sm">
+                    <HeaderContent>
+                        <MudTh>Document</MudTh>
+                        <MudTh>Type</MudTh>
+                        <MudTh>Path</MudTh>
+                        <MudTh>Actions</MudTh>
+                    </HeaderContent>
+                    <RowTemplate>
+                        <MudTd DataLabel="Document">@context.Name</MudTd>
+                        <MudTd DataLabel="Type">@context.DocType</MudTd>
+                        <MudTd DataLabel="Path">@context.Path</MudTd>
+                        <MudTd DataLabel="Actions">
+                            <MudLink Href="@context.DownloadUrl" Target="_blank">Open</MudLink>
+                        </MudTd>
+                    </RowTemplate>
+                </MudTable>
+            }
+        </MudPaper>
+    </MudItem>
+</MudGrid>
+
+@code {
+    [Inject] public IHttpClientFactory HttpClientFactory { get; set; } = default!;
+
+    private MudForm? _form;
+    private readonly DocumentQuery _query = new();
+    private readonly List<DocumentDto> _documents = [];
+    private bool _loading;
+
+    private async Task LoadDocumentsAsync()
+    {
+        if (_form is null)
+        {
+            return;
+        }
+
+        await _form.Validate();
+        if (!_form.IsValid)
+        {
+            return;
+        }
+
+        _loading = true;
+        try
+        {
+            var client = HttpClientFactory.CreateClient("ApiClient");
+            var result = await client.GetFromJsonAsync<List<DocumentDto>>($"/api/projects/{_query.ProjectNumber}/documents") ?? [];
+            _documents.Clear();
+            _documents.AddRange(result);
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private sealed class DocumentQuery
+    {
+        [Required]
+        public string ProjectNumber { get; set; } = string.Empty;
+    }
+
+    private sealed record DocumentDto(string Name, string DocType, string Path, string DownloadUrl);
+}

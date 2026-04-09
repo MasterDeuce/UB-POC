@@ -1,0 +1,70 @@
+@page "/jobs"
+
+<PageTitle>Jobs</PageTitle>
+
+<MudPaper Class="pa-4" Elevation="1">
+    <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center" Class="mb-3">
+        <MudText Typo="Typo.h5">Job History</MudText>
+        <MudButton Variant="Variant.Text" StartIcon="@Icons.Material.Filled.Refresh" Disabled="_loading" OnClick="LoadJobsAsync">Refresh</MudButton>
+    </MudStack>
+
+    @if (_loading)
+    {
+        <MudProgressLinear Indeterminate="true" />
+    }
+    else
+    {
+        <MudTable Items="_jobs" Dense="true" Hover="true" Breakpoint="Breakpoint.Sm">
+            <HeaderContent>
+                <MudTh>Job</MudTh>
+                <MudTh>Project</MudTh>
+                <MudTh>Status</MudTh>
+                <MudTh>Updated</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="Job">@context.JobId</MudTd>
+                <MudTd DataLabel="Project">@context.ProjectNumber</MudTd>
+                <MudTd DataLabel="Status">
+                    <MudChip T="string" Color="@GetColor(context.Status)">@context.Status</MudChip>
+                </MudTd>
+                <MudTd DataLabel="Updated">@context.UpdatedUtc.ToLocalTime().ToString("g")</MudTd>
+            </RowTemplate>
+        </MudTable>
+    }
+</MudPaper>
+
+@code {
+    [Inject] public IHttpClientFactory HttpClientFactory { get; set; } = default!;
+
+    private bool _loading;
+    private List<JobSummaryDto> _jobs = [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadJobsAsync();
+    }
+
+    private async Task LoadJobsAsync()
+    {
+        _loading = true;
+        try
+        {
+            var client = HttpClientFactory.CreateClient("ApiClient");
+            _jobs = await client.GetFromJsonAsync<List<JobSummaryDto>>("/api/jobs") ?? [];
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private static Color GetColor(string status) => status.ToLowerInvariant() switch
+    {
+        "completed" => Color.Success,
+        "failed" => Color.Error,
+        "running" => Color.Info,
+        _ => Color.Default
+    };
+
+    private sealed record JobSummaryDto(string JobId, string ProjectNumber, string Status, DateTime UpdatedUtc);
+}

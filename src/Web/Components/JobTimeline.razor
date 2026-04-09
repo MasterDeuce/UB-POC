@@ -1,0 +1,74 @@
+<MudPaper Class="pa-4" Elevation="1">
+    <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center" Class="mb-3">
+        <MudText Typo="Typo.h6">Job Timeline</MudText>
+        <MudButton Variant="Variant.Text" StartIcon="@Icons.Material.Filled.Refresh" Disabled="_loading" OnClick="LoadTimelineAsync">Refresh</MudButton>
+    </MudStack>
+
+    @if (_loading)
+    {
+        <MudProgressCircular Indeterminate="true" Color="Color.Primary" />
+    }
+    else if (_timeline.Count == 0)
+    {
+        <MudText Typo="Typo.body2">No events available for this job.</MudText>
+    }
+    else
+    {
+        <MudTimeline>
+            @foreach (var eventItem in _timeline)
+            {
+                <MudTimelineItem Color="@GetColor(eventItem.State)">
+                    <ItemContent>
+                        <MudText Typo="Typo.subtitle2">@eventItem.State</MudText>
+                        <MudText Typo="Typo.caption">@eventItem.TimestampUtc.ToLocalTime().ToString("g")</MudText>
+                        <MudText Typo="Typo.body2">@eventItem.Message</MudText>
+                    </ItemContent>
+                </MudTimelineItem>
+            }
+        </MudTimeline>
+    }
+</MudPaper>
+
+@code {
+    [Inject] public IHttpClientFactory HttpClientFactory { get; set; } = default!;
+    [Parameter, EditorRequired] public string JobId { get; set; } = string.Empty;
+
+    private bool _loading;
+    private List<JobEventDto> _timeline = [];
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (!string.IsNullOrWhiteSpace(JobId))
+        {
+            await LoadTimelineAsync();
+        }
+    }
+
+    private async Task LoadTimelineAsync()
+    {
+        _loading = true;
+        try
+        {
+            var client = HttpClientFactory.CreateClient("ApiClient");
+            _timeline = await client.GetFromJsonAsync<List<JobEventDto>>($"/api/jobs/{JobId}/timeline") ?? [];
+        }
+        catch
+        {
+            _timeline = [];
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private static Color GetColor(string state) => state.ToLowerInvariant() switch
+    {
+        "completed" => Color.Success,
+        "failed" => Color.Error,
+        "running" => Color.Info,
+        _ => Color.Default
+    };
+
+    private sealed record JobEventDto(DateTime TimestampUtc, string State, string Message);
+}
