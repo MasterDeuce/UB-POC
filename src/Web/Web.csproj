@@ -5,7 +5,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
 
-  <ItemGroup>
+  <PropertyGroup>
     <AssemblyName>WorkInstructions.Web</AssemblyName>
     <RootNamespace>WorkInstructions.Web</RootNamespace>
   </PropertyGroup>
@@ -18,5 +18,11 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="8.0.7" />
     <PackageReference Include="MudBlazor" Version="6.20.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="Configuration/Prompts/*.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
 </Project>

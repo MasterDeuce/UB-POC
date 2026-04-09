@@ -1,0 +1,8 @@
+Create a structured draft work instruction from this normalized payload:
+
+{{normalized_input_json}}
+
+Remember:
+- Do not invent facts.
+- Mark unknowns.
+- Use estimate/proposal content only.
