@@ -1,0 +1,11 @@
+html,
+body {
+    font-family: "Inter", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    margin: 0;
+    background-color: #f5f7fb;
+}
+
+a,
+a:visited {
+    color: inherit;
+}
