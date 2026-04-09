@@ -1,6 +1,7 @@
 using Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using MudBlazor.Services;
+using WorkInstructions.Web;
 
 var builder = WebApplication.CreateBuilder(args);
 

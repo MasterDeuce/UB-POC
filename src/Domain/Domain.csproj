@@ -1,5 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
     <AssemblyName>WorkInstructions.Domain</AssemblyName>
     <RootNamespace>WorkInstructions.Domain</RootNamespace>
   </PropertyGroup>
