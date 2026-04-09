@@ -1,0 +1,94 @@
+<MudPaper Class="pa-4" Elevation="1">
+    <MudText Typo="Typo.h6" Class="mb-2">Uploads</MudText>
+
+    <MudFileUpload T="IReadOnlyList<IBrowserFile>" FilesChanged="OnFilesChanged" Disabled="_uploading" AppendMultipleFiles="true" Accept=".pdf,.doc,.docx,.txt">
+        <ButtonTemplate>
+            <MudButton Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.UploadFile" Disabled="_uploading">Select Files</MudButton>
+        </ButtonTemplate>
+    </MudFileUpload>
+
+    @if (_files.Count > 0)
+    {
+        <MudList T="string" Dense="true" Class="mt-3">
+            @foreach (var file in _files)
+            {
+                <MudListItem T="string">@file.Name (@(file.Size / 1024) KB)</MudListItem>
+            }
+        </MudList>
+
+        <MudButton Class="mt-2" Variant="Variant.Outlined" Color="Color.Primary" Disabled="_uploading || string.IsNullOrWhiteSpace(ProjectNumber)" OnClick="UploadAsync">
+            Upload to Project
+        </MudButton>
+    }
+
+    @if (_uploading)
+    {
+        <MudProgressLinear Class="mt-3" Indeterminate="true" />
+    }
+
+    @if (!string.IsNullOrWhiteSpace(_statusMessage))
+    {
+        <MudAlert Class="mt-3" Dense="true" Severity="@_statusSeverity">@_statusMessage</MudAlert>
+    }
+</MudPaper>
+
+@code {
+    [Inject] public IHttpClientFactory HttpClientFactory { get; set; } = default!;
+    [Parameter, EditorRequired] public string ProjectNumber { get; set; } = string.Empty;
+
+    private readonly List<IBrowserFile> _files = [];
+    private bool _uploading;
+    private string? _statusMessage;
+    private Severity _statusSeverity = Severity.Info;
+
+    private void OnFilesChanged(IReadOnlyList<IBrowserFile> files)
+    {
+        _files.Clear();
+        _files.AddRange(files);
+        _statusMessage = null;
+    }
+
+    private async Task UploadAsync()
+    {
+        if (_files.Count == 0)
+        {
+            _statusSeverity = Severity.Warning;
+            _statusMessage = "Choose at least one file before upload.";
+            return;
+        }
+
+        _uploading = true;
+        try
+        {
+            using var content = new MultipartFormDataContent();
+            foreach (var file in _files)
+            {
+                var stream = file.OpenReadStream(maxAllowedSize: 25 * 1024 * 1024);
+                content.Add(new StreamContent(stream), "files", file.Name);
+            }
+
+            var client = HttpClientFactory.CreateClient("ApiClient");
+            var response = await client.PostAsync($"/api/projects/{ProjectNumber}/uploads", content);
+
+            if (response.IsSuccessStatusCode)
+            {
+                _statusSeverity = Severity.Success;
+                _statusMessage = $"Uploaded {_files.Count} file(s).";
+            }
+            else
+            {
+                _statusSeverity = Severity.Error;
+                _statusMessage = $"Upload failed: {(int)response.StatusCode} {response.ReasonPhrase}";
+            }
+        }
+        catch (Exception ex)
+        {
+            _statusSeverity = Severity.Error;
+            _statusMessage = $"Upload failed: {ex.Message}";
+        }
+        finally
+        {
+            _uploading = false;
+        }
+    }
+}

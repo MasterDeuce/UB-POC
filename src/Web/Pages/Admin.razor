@@ -1,0 +1,114 @@
+@page "/admin"
+
+<PageTitle>Admin</PageTitle>
+
+<MudPaper Class="pa-4" Elevation="1">
+    <MudText Typo="Typo.h5" Class="mb-3">Integration & Prompt Settings</MudText>
+
+    <MudForm @ref="_form" Model="_settings">
+        <MudGrid Spacing="2">
+            <MudItem xs="12" md="6">
+                <MudTextField @bind-Value="_settings.WorkflowApiBaseUrl" Label="Workflow API URL" For="@(() => _settings.WorkflowApiBaseUrl)"
+                              Variant="Variant.Outlined" Required="true" RequiredError="API URL is required" />
+            </MudItem>
+            <MudItem xs="12" md="6">
+                <MudTextField @bind-Value="_settings.DocumentStorePath" Label="Document Store Path" For="@(() => _settings.DocumentStorePath)"
+                              Variant="Variant.Outlined" Required="true" RequiredError="Path is required" />
+            </MudItem>
+            <MudItem xs="12">
+                <MudTextField @bind-Value="_settings.GenerationPrompt" Label="Generation Prompt" Lines="6" Variant="Variant.Outlined"
+                              For="@(() => _settings.GenerationPrompt)" Required="true" RequiredError="Prompt is required" />
+            </MudItem>
+            <MudItem xs="12">
+                <MudTextField @bind-Value="_settings.ReviewPrompt" Label="Review Prompt" Lines="6" Variant="Variant.Outlined"
+                              For="@(() => _settings.ReviewPrompt)" Required="true" RequiredError="Prompt is required" />
+            </MudItem>
+            <MudItem xs="12">
+                <MudStack Row="true" Spacing="2">
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary" Disabled="_saving" OnClick="SaveAsync">Save Settings</MudButton>
+                    <MudButton Variant="Variant.Outlined" Disabled="_saving" OnClick="LoadAsync">Reload</MudButton>
+                </MudStack>
+            </MudItem>
+        </MudGrid>
+    </MudForm>
+
+    @if (!string.IsNullOrWhiteSpace(_status))
+    {
+        <MudAlert Class="mt-3" Severity="@_statusSeverity">@_status</MudAlert>
+    }
+</MudPaper>
+
+@code {
+    [Inject] public IHttpClientFactory HttpClientFactory { get; set; } = default!;
+
+    private MudForm? _form;
+    private readonly AdminSettings _settings = new();
+    private bool _saving;
+    private string? _status;
+    private Severity _statusSeverity = Severity.Info;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        var client = HttpClientFactory.CreateClient("ApiClient");
+        var result = await client.GetFromJsonAsync<AdminSettings>("/api/admin/settings");
+        if (result is null)
+        {
+            return;
+        }
+
+        _settings.WorkflowApiBaseUrl = result.WorkflowApiBaseUrl;
+        _settings.DocumentStorePath = result.DocumentStorePath;
+        _settings.GenerationPrompt = result.GenerationPrompt;
+        _settings.ReviewPrompt = result.ReviewPrompt;
+    }
+
+    private async Task SaveAsync()
+    {
+        if (_form is null)
+        {
+            return;
+        }
+
+        await _form.Validate();
+        if (!_form.IsValid)
+        {
+            _statusSeverity = Severity.Warning;
+            _status = "Please fix validation errors before saving.";
+            return;
+        }
+
+        _saving = true;
+        try
+        {
+            var client = HttpClientFactory.CreateClient("ApiClient");
+            var response = await client.PutAsJsonAsync("/api/admin/settings", _settings);
+            _statusSeverity = response.IsSuccessStatusCode ? Severity.Success : Severity.Error;
+            _status = response.IsSuccessStatusCode ? "Settings saved." : $"Save failed: {(int)response.StatusCode} {response.ReasonPhrase}";
+        }
+        finally
+        {
+            _saving = false;
+        }
+    }
+
+    private sealed class AdminSettings
+    {
+        [Required]
+        [Url]
+        public string WorkflowApiBaseUrl { get; set; } = string.Empty;
+
+        [Required]
+        public string DocumentStorePath { get; set; } = string.Empty;
+
+        [Required]
+        public string GenerationPrompt { get; set; } = string.Empty;
+
+        [Required]
+        public string ReviewPrompt { get; set; } = string.Empty;
+    }
+}

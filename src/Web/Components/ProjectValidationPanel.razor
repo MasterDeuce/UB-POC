@@ -1,0 +1,63 @@
+<MudPaper Class="pa-4" Elevation="1">
+    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-2">
+        <MudText Typo="Typo.h6">Project Validation</MudText>
+        <MudButton Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.FactCheck" Disabled="_busy" OnClick="ValidateAsync">Validate</MudButton>
+    </MudStack>
+
+    @if (_busy)
+    {
+        <MudProgressLinear Indeterminate="true" />
+    }
+
+    @if (_result is not null)
+    {
+        <MudAlert Severity="@(_result.IsValid ? Severity.Success : Severity.Warning)" Dense="true" Class="mt-3">
+            @(_result.IsValid ? "Project is valid." : "Project needs attention.")
+        </MudAlert>
+
+        @if (_result.Messages.Count > 0)
+        {
+            <MudList T="string" Dense="true" Class="mt-2">
+                @foreach (var message in _result.Messages)
+                {
+                    <MudListItem T="string">@message</MudListItem>
+                }
+            </MudList>
+        }
+    }
+</MudPaper>
+
+@code {
+    [Inject] public IHttpClientFactory HttpClientFactory { get; set; } = default!;
+    [Parameter, EditorRequired] public string ProjectNumber { get; set; } = string.Empty;
+
+    private bool _busy;
+    private ValidationResultDto? _result;
+
+    private async Task ValidateAsync()
+    {
+        if (string.IsNullOrWhiteSpace(ProjectNumber))
+        {
+            _result = new ValidationResultDto(false, ["Project number is required."]);
+            return;
+        }
+
+        _busy = true;
+        try
+        {
+            var client = HttpClientFactory.CreateClient("ApiClient");
+            _result = await client.GetFromJsonAsync<ValidationResultDto>($"/api/projects/{ProjectNumber}/validate")
+                ?? new ValidationResultDto(false, ["No validation response was returned."]);
+        }
+        catch (Exception ex)
+        {
+            _result = new ValidationResultDto(false, [$"Validation call failed: {ex.Message}"]);
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+
+    private sealed record ValidationResultDto(bool IsValid, List<string> Messages);
+}
