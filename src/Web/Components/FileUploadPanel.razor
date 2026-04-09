@@ -1,8 +1,9 @@
 @using Microsoft.AspNetCore.Components.Forms
 <MudPaper Class="pa-4" Elevation="1">
     <MudText Typo="Typo.h6" Class="mb-2">Uploads</MudText>
+    <MudText Typo="Typo.body2">Upload exactly one Excel (.xlsx/.xls) and one PDF (.pdf).</MudText>
 
-    <MudFileUpload T="IReadOnlyList<IBrowserFile>" FilesChanged="OnFilesChanged" Disabled="_uploading" AppendMultipleFiles="true" Accept=".pdf,.doc,.docx,.txt">
+    <MudFileUpload T="IReadOnlyList<IBrowserFile>" FilesChanged="OnFilesChanged" Disabled="_uploading" AppendMultipleFiles="true" Accept=".xlsx,.xls,.pdf">
         <ButtonTemplate>
             <MudButton Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.UploadFile" Disabled="_uploading">Select Files</MudButton>
         </ButtonTemplate>
@@ -54,7 +55,16 @@
         if (_files.Count == 0)
         {
             _statusSeverity = Severity.Warning;
-            _statusMessage = "Choose at least one file before upload.";
+            _statusMessage = "Choose one Excel file and one PDF file before upload.";
+            return;
+        }
+
+        var excelCount = _files.Count(file => IsExcel(file.Name));
+        var pdfCount = _files.Count(file => IsPdf(file.Name));
+        if (_files.Count != 2 || excelCount != 1 || pdfCount != 1)
+        {
+            _statusSeverity = Severity.Warning;
+            _statusMessage = "Upload exactly two files: one Excel (.xlsx/.xls) and one PDF (.pdf).";
             return;
         }
 
@@ -74,7 +84,7 @@
             if (response.IsSuccessStatusCode)
             {
                 _statusSeverity = Severity.Success;
-                _statusMessage = $"Uploaded {_files.Count} file(s).";
+                _statusMessage = "Uploaded one Excel and one PDF successfully.";
             }
             else
             {
@@ -91,5 +101,18 @@
         {
             _uploading = false;
         }
+    }
+
+    private static bool IsExcel(string fileName)
+    {
+        var extension = Path.GetExtension(fileName);
+        return extension.Equals(".xlsx", StringComparison.OrdinalIgnoreCase)
+               || extension.Equals(".xls", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static bool IsPdf(string fileName)
+    {
+        var extension = Path.GetExtension(fileName);
+        return extension.Equals(".pdf", StringComparison.OrdinalIgnoreCase);
     }
 }
