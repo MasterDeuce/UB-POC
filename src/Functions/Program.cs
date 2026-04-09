@@ -1,9 +1,11 @@
 using Functions.Workflow;
+using Application.Interfaces;
 using Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using WorkInstructions.Infrastructure.AI;
 
 var host = new HostBuilder()
     .ConfigureFunctionsWorkerDefaults()
@@ -26,6 +28,7 @@ var host = new HostBuilder()
 
         services.AddScoped<IWorkflowStateStore, EfWorkflowStateStore>();
         services.AddScoped<IWorkflowStepExecutor, WorkflowStepExecutor>();
+        services.AddScoped<IWorkInstructionGenerationService, OpenAiWorkInstructionGenerationService>();
     })
     .Build();
 
