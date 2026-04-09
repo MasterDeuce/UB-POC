@@ -1,0 +1,6 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <AssemblyName>WorkInstructions.Domain</AssemblyName>
+    <RootNamespace>WorkInstructions.Domain</RootNamespace>
+  </PropertyGroup>
+</Project>
